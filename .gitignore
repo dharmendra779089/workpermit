@@ -1,0 +1,23 @@
+# Python & Django
+*.py[cod]
+*$py.class
+__pycache__/
+.venv/
+env/
+venv/
+*.sqlite3
+db.sqlite3
+local_settings.py
+.env
+staticfiles/
+media/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
