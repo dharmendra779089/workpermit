@@ -269,10 +269,10 @@ class PermitCreateUpdateSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'permit_number', 'permit_type', 'title', 'description',
             'contractor_name', 'team_size', 'equipment',
-            'planned_start', 'planned_end', 'hazards', 'ppe_required',
+            'planned_start', 'planned_end', 'status', 'hazards', 'ppe_required',
             'precautions', 'type_data', 'submit_immediately'
         ]
-        read_only_fields = ['permit_number']
+        read_only_fields = ['permit_number', 'status']
 
     def validate(self, attrs):
         planned_start = attrs.get('planned_start')
