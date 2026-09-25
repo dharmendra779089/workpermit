@@ -4,6 +4,12 @@ A high-stakes, safety-critical **Permit to Work (PTW)** module built for **Opmai
 
 In chemical and industrial plants, a Permit to Work is not a to-do list — it is an authorization document that prevents fatal workplace incidents. When a worker welds near a pipe rack with flammable hydrocarbon residue, enters a confined vessel with oxygen deficiency, or works on a 415V switchgear busbar, a single bypassed safety check can cause an explosion or loss of life. This system models a shared permit entity with dynamic type-specific safety schemas, an immutable audit trail, conflict detection, and strict server-side state machine enforcement.
 
+## 🌐 Live Deployed Application
+
+- **Live URL**: **[https://web-production-5b49a5.up.railway.app](https://web-production-5b49a5.up.railway.app)**
+- **Hosting Platform**: Railway (Full-stack Python/Django + Managed PostgreSQL)
+- **Status**: Live, seeded, and operational with instant demo role-switching buttons.
+
 ---
 
 ## 🛠 Tech Stack
