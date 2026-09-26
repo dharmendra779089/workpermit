@@ -204,7 +204,7 @@ class ApiClient {
   }
 
   async verifyClosure(id, notes) {
-    return this.request(`/permits/${id}/verify-closure/`, {
+    return this.request(`/permits/${id}/verify_closure/`, {
       method: 'POST',
       body: JSON.stringify({ notes })
     });
@@ -218,16 +218,23 @@ class ApiClient {
   }
 
   async requestExtension(id, hours, reason) {
-    return this.request(`/permits/${id}/request-extension/`, {
+    return this.request(`/permits/${id}/request_extension/`, {
       method: 'POST',
       body: JSON.stringify({ hours, reason })
     });
   }
 
   async approveExtension(id, approved, comment) {
-    return this.request(`/permits/${id}/approve-extension/`, {
+    return this.request(`/permits/${id}/approve_extension/`, {
       method: 'POST',
       body: JSON.stringify({ approved, comment })
+    });
+  }
+
+  async logWork(id, data) {
+    return this.request(`/permits/${id}/log_work/`, {
+      method: 'POST',
+      body: JSON.stringify(data)
     });
   }
 

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User, Plant, Area, Equipment, Permit, PermitApproval, PermitAuditLog
+from .models import User, Plant, Area, Equipment, Permit, PermitApproval, PermitAuditLog, PermitWorkLog
 
 
 @admin.register(User)
@@ -35,6 +35,12 @@ class PermitApprovalInline(admin.TabularInline):
     readonly_fields = ('role_type', 'approver', 'status', 'acted_at', 'comment')
 
 
+class PermitWorkLogInline(admin.TabularInline):
+    model = PermitWorkLog
+    extra = 0
+    readonly_fields = ('logged_at', 'worker', 'worker_name', 'hours_spent', 'task_description')
+
+
 class PermitAuditLogInline(admin.TabularInline):
     model = PermitAuditLog
     extra = 0
@@ -47,7 +53,7 @@ class PermitAdmin(admin.ModelAdmin):
     list_display = ('permit_number', 'title', 'permit_type', 'status', 'requester', 'equipment', 'planned_start', 'planned_end')
     list_filter = ('status', 'permit_type', 'equipment__area__plant')
     search_fields = ('permit_number', 'title', 'contractor_name', 'equipment__tag_number')
-    inlines = [PermitApprovalInline, PermitAuditLogInline]
+    inlines = [PermitApprovalInline, PermitWorkLogInline, PermitAuditLogInline]
     readonly_fields = ('permit_number', 'created_at', 'updated_at')
 
 
@@ -57,8 +63,16 @@ class PermitApprovalAdmin(admin.ModelAdmin):
     list_filter = ('status', 'role_type')
 
 
+@admin.register(PermitWorkLog)
+class PermitWorkLogAdmin(admin.ModelAdmin):
+    list_display = ('permit', 'logged_at', 'worker_name', 'hours_spent', 'task_description')
+    list_filter = ('logged_at',)
+    search_fields = ('permit__permit_number', 'worker_name', 'task_description')
+
+
 @admin.register(PermitAuditLog)
 class PermitAuditLogAdmin(admin.ModelAdmin):
     list_display = ('permit', 'timestamp', 'actor_name', 'actor_role', 'action', 'from_status', 'to_status')
     list_filter = ('action', 'from_status', 'to_status')
     search_fields = ('permit__permit_number', 'actor_name', 'comment')
+

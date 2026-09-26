@@ -1,0 +1,250 @@
+[
+  {
+    "id": "TC-AUTH-01",
+    "category": "Authentication",
+    "description": "Login as REQUESTER (requester@opmaint.com)",
+    "passed": true,
+    "status": "PASS",
+    "details": "Status: 200, User ID: 1"
+  },
+  {
+    "id": "TC-AUTH-02",
+    "category": "Authentication",
+    "description": "Login as AREA_OWNER (areaowner@opmaint.com)",
+    "passed": true,
+    "status": "PASS",
+    "details": "Status: 200, User ID: 2"
+  },
+  {
+    "id": "TC-AUTH-03",
+    "category": "Authentication",
+    "description": "Login as SAFETY_OFFICER (safety@opmaint.com)",
+    "passed": true,
+    "status": "PASS",
+    "details": "Status: 200, User ID: 3"
+  },
+  {
+    "id": "TC-AUTH-04",
+    "category": "Authentication",
+    "description": "Login as ADMIN (admin@opmaint.com)",
+    "passed": true,
+    "status": "PASS",
+    "details": "Status: 200, User ID: 4"
+  },
+  {
+    "id": "TC-AUTH-05",
+    "category": "Authentication",
+    "description": "Reject invalid credentials",
+    "passed": true,
+    "status": "PASS",
+    "details": "Status: 401"
+  },
+  {
+    "id": "TC-SCHEMA-01",
+    "category": "Schema Extensibility",
+    "description": "Fetch 5 permit types including Excavation",
+    "passed": true,
+    "status": "PASS",
+    "details": "Total Types: 5"
+  },
+  {
+    "id": "TC-MASTER-01",
+    "category": "Master Data",
+    "description": "Fetch industrial plants list",
+    "passed": true,
+    "status": "PASS",
+    "details": "Plants count: 2"
+  },
+  {
+    "id": "TC-MASTER-02",
+    "category": "Master Data",
+    "description": "Fetch process areas list",
+    "passed": true,
+    "status": "PASS",
+    "details": "Areas count: 4"
+  },
+  {
+    "id": "TC-MASTER-03",
+    "category": "Master Data",
+    "description": "Fetch equipment assets list",
+    "passed": true,
+    "status": "PASS",
+    "details": "Equipment count: 7"
+  },
+  {
+    "id": "TC-DASH-01",
+    "category": "Dashboard KPIs",
+    "description": "Fetch real-time KPI statistics",
+    "passed": true,
+    "status": "PASS",
+    "details": "Active: 0, Expiring: 0"
+  },
+  {
+    "id": "TC-SAFETY-01",
+    "category": "Safety Edge Case",
+    "description": "Reject Hot Work with dangerous LEL >= 10%",
+    "passed": true,
+    "status": "PASS",
+    "details": "Status: 400, Error: {'type_data': {'gas_test_lel_pct': 'SAFETY VIOLATION: Combustible gas LEL is >= 10%. Hot work strictly prohibited!'}}"
+  },
+  {
+    "id": "TC-SAFETY-02",
+    "category": "Safety Edge Case",
+    "description": "Reject permit with planned_end <= planned_start",
+    "passed": true,
+    "status": "PASS",
+    "details": "Status: 400, Error: {'planned_end': ['Planned end time must be after planned start time.']}"
+  },
+  {
+    "id": "TC-STATE-01",
+    "category": "State Machine",
+    "description": "Create DRAFT permit (PTW-2026-0017)",
+    "passed": true,
+    "status": "PASS",
+    "details": "ID: 45"
+  },
+  {
+    "id": "TC-STATE-02",
+    "category": "State Machine",
+    "description": "Submit permit DRAFT -> PENDING_APPROVAL",
+    "passed": true,
+    "status": "PASS",
+    "details": "Status: PENDING_APPROVAL"
+  },
+  {
+    "id": "TC-RULE-01",
+    "category": "Permission Rule",
+    "description": "Block person from approving their own permit",
+    "passed": true,
+    "status": "PASS",
+    "details": "Status: 403, Response: {'detail': 'SECURITY VIOLATION: A person can never approve their own permit.'}"
+  },
+  {
+    "id": "TC-RULE-02",
+    "category": "Permission Rule",
+    "description": "Block activation when approvals are missing",
+    "passed": true,
+    "status": "PASS",
+    "details": "Status: 400, Response: [\"Permit cannot be activated from status 'PENDING_APPROVAL'. Permit must be in APPROVED status with all approvals satisfied.\"]"
+  },
+  {
+    "id": "TC-STATE-03",
+    "category": "State Machine",
+    "description": "Area Owner signs and approves permit",
+    "passed": true,
+    "status": "PASS",
+    "details": "Approvals count: 2"
+  },
+  {
+    "id": "TC-STATE-04",
+    "category": "State Machine",
+    "description": "Multi-party approval transitions status to APPROVED",
+    "passed": true,
+    "status": "PASS",
+    "details": "Final Status: APPROVED"
+  },
+  {
+    "id": "TC-STATE-05",
+    "category": "State Machine",
+    "description": "Activate permit APPROVED -> ACTIVE",
+    "passed": true,
+    "status": "PASS",
+    "details": "Actual Start: 2026-09-26T07:40:39Z"
+  },
+  {
+    "id": "TC-STATE-06",
+    "category": "State Machine",
+    "description": "Safety Officer initiates EMERGENCY SUSPENSION",
+    "passed": true,
+    "status": "PASS",
+    "details": "Status: SUSPENDED"
+  },
+  {
+    "id": "TC-RULE-03",
+    "category": "Permission Rule",
+    "description": "Block Requester from resuming suspended permit",
+    "passed": true,
+    "status": "PASS",
+    "details": "Status: 403"
+  },
+  {
+    "id": "TC-STATE-07",
+    "category": "State Machine",
+    "description": "Safety Officer authorizes RESUMPTION -> ACTIVE",
+    "passed": true,
+    "status": "PASS",
+    "details": "Status: ACTIVE"
+  },
+  {
+    "id": "TC-STATE-08",
+    "category": "Extension Flow",
+    "description": "Requester submits extension request (+3h)",
+    "passed": true,
+    "status": "PASS",
+    "details": "Ext Status: REQUESTED"
+  },
+  {
+    "id": "TC-STATE-09",
+    "category": "Extension Flow",
+    "description": "Safety Officer approves extension request",
+    "passed": true,
+    "status": "PASS",
+    "details": "New Planned End: 2026-09-26T16:40:35Z"
+  },
+  {
+    "id": "TC-STATE-10",
+    "category": "State Machine",
+    "description": "Requester marks work complete -> CLOSED",
+    "passed": true,
+    "status": "PASS",
+    "details": "Closed At: 2026-09-26T07:40:43Z"
+  },
+  {
+    "id": "TC-STATE-11",
+    "category": "State Machine",
+    "description": "Safety Officer verifies closure -> CLOSED_VERIFIED",
+    "passed": true,
+    "status": "PASS",
+    "details": "Verified By: Vikram Singh"
+  },
+  {
+    "id": "TC-RULE-04",
+    "category": "Safety Rule",
+    "description": "Block activation of terminal CLOSED_VERIFIED permit",
+    "passed": true,
+    "status": "PASS",
+    "details": "Status: 400"
+  },
+  {
+    "id": "TC-REJECT-01",
+    "category": "Rejection Rule",
+    "description": "Block rejection without mandatory reason",
+    "passed": true,
+    "status": "PASS",
+    "details": "Status: 400"
+  },
+  {
+    "id": "TC-REJECT-02",
+    "category": "Rejection Rule",
+    "description": "Reject permit with documented reason -> REJECTED",
+    "passed": true,
+    "status": "PASS",
+    "details": "Status: REJECTED"
+  },
+  {
+    "id": "TC-CONFLICT-01",
+    "category": "Conflict Engine",
+    "description": "Pre-check spatial and temporal conflicts API",
+    "passed": true,
+    "status": "PASS",
+    "details": "Conflicts checked: 0"
+  },
+  {
+    "id": "TC-AUDIT-01",
+    "category": "Audit Trail",
+    "description": "Verify complete immutable audit trail generation",
+    "passed": true,
+    "status": "PASS",
+    "details": "Log entries: 12"
+  }
+]

@@ -4,7 +4,7 @@ Serializers for Opmaint Permit to Work (PTW) CMMS module.
 
 from rest_framework import serializers
 from django.utils import timezone
-from .models import User, Plant, Area, Equipment, Permit, PermitApproval, PermitAuditLog
+from .models import User, Plant, Area, Equipment, Permit, PermitApproval, PermitAuditLog, PermitWorkLog
 from .schemas import PERMIT_TYPE_REGISTRY, validate_type_data
 from .services import PermitStateMachine, ConflictDetector
 
@@ -88,6 +88,18 @@ class PermitAuditLogSerializer(serializers.ModelSerializer):
         ]
 
 
+class PermitWorkLogSerializer(serializers.ModelSerializer):
+    worker_role = serializers.CharField(source='worker.get_role_display', read_only=True)
+
+    class Meta:
+        model = PermitWorkLog
+        fields = [
+            'id', 'worker', 'worker_name', 'worker_role',
+            'task_description', 'hours_spent', 'logged_at'
+        ]
+        read_only_fields = ['id', 'worker', 'logged_at']
+
+
 class PermitListSerializer(serializers.ModelSerializer):
     permit_type_display = serializers.CharField(source='get_permit_type_display', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
@@ -160,6 +172,7 @@ class PermitListSerializer(serializers.ModelSerializer):
 class PermitDetailSerializer(PermitListSerializer):
     approvals = PermitApprovalSerializer(many=True, read_only=True)
     audit_logs = PermitAuditLogSerializer(many=True, read_only=True)
+    work_logs = PermitWorkLogSerializer(many=True, read_only=True)
     available_actions = serializers.SerializerMethodField()
     conflicts = serializers.SerializerMethodField()
     closure_verified_by_name = serializers.SerializerMethodField()
@@ -167,7 +180,7 @@ class PermitDetailSerializer(PermitListSerializer):
     class Meta(PermitListSerializer.Meta):
         fields = PermitListSerializer.Meta.fields + [
             'description', 'hazards', 'ppe_required', 'precautions',
-            'type_data', 'approvals', 'audit_logs', 'available_actions',
+            'type_data', 'approvals', 'audit_logs', 'work_logs', 'available_actions',
             'conflicts', 'extension_hours', 'extension_reason',
             'extension_requested_at', 'completion_notes', 'closed_at',
             'closure_verified_by', 'closure_verified_by_name',
@@ -229,6 +242,9 @@ class PermitDetailSerializer(PermitListSerializer):
 
         # ACTIVE state actions
         elif obj.status == Permit.Status.ACTIVE:
+            # Any authorized worker or requester or safety officer can log work against active permit
+            actions.append('LOG_WORK')
+
             # Safety officer or admin can suspend
             if user.is_safety_officer() or user.is_admin_user():
                 actions.append('SUSPEND')

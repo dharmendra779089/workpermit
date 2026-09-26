@@ -127,17 +127,20 @@ CANCELLED           REJECTED                                       ├── exp
 1. **Expiry Handling that Actually Works**:
    - Live visual countdown timer on active permits (`HH:MM:SS`).
    - "Expiring Soon" alert badge when within 2 hours of planned end.
-   - Background validation hook auto-expires permits even when no browser is open.
-2. **Extension Request Flow**:
+   - Background lazy evaluation on queries + standalone scheduler command (`python manage.py expire_permits`) for Linux cron / Celery beat when no browser is open.
+2. **Work Logging Invariant Enforcement (`PermitWorkLog`)**:
+   - Maintenance technicians log work execution, labor hours, and technical notes directly against active permits.
+   - Enforces the safety invariant: work cannot be logged against any permit that isn't `ACTIVE`.
+3. **Extension Request Flow**:
    - Requester can request $+N$ hours (1 to 8 hours) with technical justification before expiry.
    - Requires re-approval by Safety Officer.
-3. **Spatial & Temporal Conflict Detection**:
+4. **Spatial & Temporal Conflict Detection**:
    - Automated conflict engine warns when a Hot Work permit overlaps in time and location with a Confined Space Entry permit (or concurrent hot work on the same asset).
-4. **Mobile-First / Shop Floor Field Mode**:
+5. **Mobile-First / Shop Floor Field Mode**:
    - One-click toggle for technicians working outdoors in sunlight with gloves on: ultra-high contrast, minimum 56px touch targets, yellow-on-black visibility.
-5. **Plant Walk-Around QR Code**:
+6. **Plant Walk-Around QR Code**:
    - Generates unique QR code for every permit so HSE inspectors can scan with a mobile camera during physical site inspections.
-6. **Digital Signature Capture**:
+7. **Digital Signature Capture**:
    - HTML5 canvas signature pad allowing touch, mouse, or stylus sign-offs recorded in the immutable audit trail.
 
 ---
@@ -161,15 +164,18 @@ python manage.py test
 - `test_rejection_requires_mandatory_reason` (Mandatory rejection audit log)
 - `test_hot_work_dangerous_lel_rejected_by_schema` (Gas LEL $\ge 10\%$ safety rule validation)
 - `test_conflict_detection_between_hot_work_and_confined_space` (Spatial clash detection)
+- `test_work_cannot_be_logged_against_non_active_permit` (Work logging invariant strictly enforced)
 
 ---
 
 ## 📋 Architectural Decisions Where Spec Was Silent
 
 1. **Approval Hierarchy**: Required both the Area Owner (owns the physical equipment) and the Safety Officer (verifies environmental safety) to sign off before a permit can transition from `PENDING_APPROVAL` to `APPROVED`.
-2. **Dynamic Schema Validation Strategy**: Stored type-specific parameters in a structured `type_data` JSON field with strict declarative validation schemas in `permits/schemas.py`. This provides flexibility for industrial clients while preserving strict typing and boundary validation.
-3. **Audit Trail Immutability**: Implemented `PermitAuditLog` with read-only constraints in Django admin and no delete/update endpoints in DRF, ensuring audit compliance during industrial accident investigations.
-4. **QR Code Verification**: Standardized QR code encoding to point to the permit's permanent identifier URL for instant mobile lookup.
+2. **Dynamic Schema Validation Strategy**: Stored type-specific parameters in a structured `type_data` JSON field with strict declarative validation schemas in `permits/schemas.py`. This provides flexibility for industrial clients while preserving strict typing and boundary validation. Confined Space includes mandatory Entry & Egress Personnel Log (`entry_exit_log`).
+3. **Work Logging Architecture**: Modeled explicit technician labor tracking via `PermitWorkLog`, with strict backend invariant checks preventing any work entries on non-active permits.
+4. **Standalone Expiry Command**: Created `python manage.py expire_permits` to allow scheduled cron jobs or container schedulers to auto-expire permits when no active HTTP traffic is hitting the server.
+5. **Audit Trail Immutability**: Implemented `PermitAuditLog` with read-only constraints in Django admin and no delete/update endpoints in DRF, ensuring audit compliance during industrial accident investigations.
+6. **QR Code Verification**: Standardized QR code encoding to point to the permit's permanent identifier URL for instant mobile lookup.
 
 ---
 

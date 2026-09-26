@@ -227,6 +227,14 @@ PERMIT_TYPE_REGISTRY = {
                 'type': 'datetime-local',
                 'required': True,
                 'help_text': 'Time test performed prior to initial entry.'
+            },
+            {
+                'name': 'entry_exit_log',
+                'label': 'Entry & Egress Personnel Log',
+                'type': 'textarea',
+                'required': True,
+                'placeholder': 'Log authorized entrants, entry timestamps, exit timestamps, and continuous attendant check-ins (e.g. Entrant 1: Amit Verma - In: 10:05, Out: 11:30 | Entrant 2: Suresh Pillai - In: 10:05, Out: 11:25).',
+                'help_text': 'Stationed standby attendant mandatory record of all entrants inside the space.'
             }
         ]
     },

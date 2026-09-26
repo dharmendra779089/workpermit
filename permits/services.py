@@ -8,7 +8,7 @@ Bypassing the UI to call the API directly will be caught and rejected with HTTP 
 from django.utils import timezone
 from datetime import timedelta
 from rest_framework.exceptions import ValidationError, PermissionDenied
-from .models import Permit, PermitApproval, PermitAuditLog, User
+from .models import Permit, PermitApproval, PermitAuditLog, PermitWorkLog, User
 from .schemas import validate_type_data
 import logging
 
@@ -685,3 +685,53 @@ class PermitStateMachine:
         )
 
         return permit
+
+    @classmethod
+    def log_work(cls, permit, user, task_description, hours_spent=1.0, worker_name=""):
+        """
+        Logs technician work execution against an active permit.
+        Enforces Rule: Work cannot be logged against a permit that isn't ACTIVE.
+        """
+        permit.check_and_update_expiry()
+
+        if permit.status != Permit.Status.ACTIVE:
+            raise ValidationError(
+                f"SAFETY VIOLATION: Work cannot be logged against a permit that isn't ACTIVE. "
+                f"Current permit status is '{permit.status}'."
+            )
+
+        if not task_description or not task_description.strip():
+            raise ValidationError({'task_description': "Task description is required to log work."})
+
+        try:
+            hrs = float(hours_spent)
+            if hrs <= 0 or hrs > 24:
+                raise ValidationError({'hours_spent': "Logged work hours must be between 0.1 and 24 hours."})
+        except (ValueError, TypeError):
+            raise ValidationError({'hours_spent': "Valid numeric hours required."})
+
+        name = worker_name.strip() or user.get_full_name() or user.username
+
+        work_log = PermitWorkLog.objects.create(
+            permit=permit,
+            worker=user,
+            worker_name=name,
+            task_description=task_description.strip(),
+            hours_spent=hrs,
+            logged_at=timezone.now()
+        )
+
+        PermitAuditLog.objects.create(
+            permit=permit,
+            actor=user,
+            actor_name=user.get_full_name() or user.username,
+            actor_role=user.get_role_display(),
+            action="WORK_LOGGED",
+            from_status=permit.status,
+            to_status=permit.status,
+            comment=f"Logged {hrs}h work: {task_description.strip()[:80]}",
+            details={"hours_spent": hrs, "worker": name, "work_log_id": work_log.id}
+        )
+
+        return work_log
+

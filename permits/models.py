@@ -265,3 +265,23 @@ class PermitAuditLog(models.Model):
 
     def __str__(self):
         return f"[{self.timestamp.strftime('%Y-%m-%d %H:%M:%S')}] {self.permit.permit_number} - {self.action} by {self.actor_name}"
+
+
+class PermitWorkLog(models.Model):
+    """
+    Tracks maintenance technician tasks logged against active permits.
+    Enforces Rule: Work cannot be logged against a permit that isn't ACTIVE.
+    """
+    permit = models.ForeignKey(Permit, related_name='work_logs', on_delete=models.CASCADE)
+    worker = models.ForeignKey(User, related_name='logged_works', on_delete=models.PROTECT)
+    worker_name = models.CharField(max_length=150)
+    task_description = models.TextField()
+    hours_spent = models.DecimalField(max_digits=5, decimal_places=2, default=1.0)
+    logged_at = models.DateTimeField(default=timezone.now, db_index=True)
+
+    class Meta:
+        ordering = ['-logged_at']
+
+    def __str__(self):
+        return f"{self.permit.permit_number} - Work by {self.worker_name} ({self.hours_spent}h)"
+

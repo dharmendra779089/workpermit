@@ -185,6 +185,13 @@
             <option value="">All Areas</option>
           </select>
 
+          <div class="filter-date-box" title="Filter by planned window date range">
+            <span class="filter-date-label">From:</span>
+            <input type="date" id="filter-start-date" onchange="app.fetchPermits()">
+            <span class="filter-date-label">To:</span>
+            <input type="date" id="filter-end-date" onchange="app.fetchPermits()">
+          </div>
+
           <button id="btn-toggle-my-approvals" class="btn-filter-toggle" onclick="app.toggleMyApprovals()">
             <span class="toggle-dot"></span> My Approvals Pending
           </button>
@@ -554,6 +561,19 @@
             <h3 class="card-title">Housekeeping & Site Closure Handover</h3>
             <div class="closure-details-block" id="detail-closure-content"></div>
           </div>
+
+          <!-- Active Work Execution Log Card -->
+          <div class="detail-card" id="detail-worklogs-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <h3 class="card-title" style="margin-bottom:0;">Technician Work Logs</h3>
+              <button id="btn-quick-log-work" class="btn-table-action btn-action-primary" onclick="app.openLogWorkModal()" style="display:none;">
+                + Log Work
+              </button>
+            </div>
+            <div id="detail-worklogs-list" class="worklogs-list">
+              <span style="color:var(--text-muted); font-size:0.85rem;">No maintenance tasks logged yet.</span>
+            </div>
+          </div>
         </div>
 
         <!-- Right Column: Approvals & Immutable Audit Timeline -->
@@ -769,6 +789,35 @@
       <div class="modal-footer">
         <button class="btn-danger" onclick="app.confirmReviewExtension(false)">Reject Extension</button>
         <button class="btn-success" onclick="app.confirmReviewExtension(true)">Approve Extension</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 10. LOG WORK MODAL (Technician / Contractor) -->
+  <div id="modal-log-work" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Log Work Against Permit</h3>
+        <button class="btn-modal-close" onclick="app.closeModal('modal-log-work')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-intro">Record maintenance activity and labor hours executed during the authorized active permit window.</p>
+        <div class="form-group">
+          <label for="work-worker-name">Lead Technician / Worker Name</label>
+          <input type="text" id="work-worker-name" placeholder="Full name of technician executing task">
+        </div>
+        <div class="form-group">
+          <label for="work-hours-spent">Labor Hours Spent <span class="required">*</span></label>
+          <input type="number" id="work-hours-spent" step="0.5" min="0.5" max="24" value="1.0" required>
+        </div>
+        <div class="form-group">
+          <label for="work-task-desc">Task Execution Notes <span class="required">*</span></label>
+          <textarea id="work-task-desc" rows="3" placeholder="Describe specific mechanical, electrical, or hot work performed..." required></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="app.closeModal('modal-log-work')">Cancel</button>
+        <button class="btn-primary" onclick="app.confirmLogWork()">Save Work Log</button>
       </div>
     </div>
   </div>

@@ -283,7 +283,7 @@ class PermitSafetyRulesTestCase(TestCase):
             planned_start=self.now,
             planned_end=self.now + timedelta(hours=6),
             status=Permit.Status.ACTIVE,
-            type_data={"space_id": "V-101", "entry_point": "MW1", "standby_attendant_name": "John", "rescue_plan": "Tripod", "ventilation_method": "Blower", "gas_test_o2_pct": 20.8, "gas_test_lel_pct": 0.0, "gas_test_h2s_ppm": 0.0, "gas_test_co_ppm": 0, "gas_test_time": "2026-09-25T10:00"}
+            type_data={"space_id": "V-101", "entry_point": "MW1", "standby_attendant_name": "John", "rescue_plan": "Tripod", "ventilation_method": "Blower", "gas_test_o2_pct": 20.8, "gas_test_lel_pct": 0.0, "gas_test_h2s_ppm": 0.0, "gas_test_co_ppm": 0, "gas_test_time": "2026-09-25T10:00", "entry_exit_log": "Entrant A in 10:00, out 11:00"}
         )
 
         conflicts = ConflictDetector.check_conflicts(
@@ -295,3 +295,49 @@ class PermitSafetyRulesTestCase(TestCase):
         )
         self.assertTrue(len(conflicts) > 0)
         self.assertEqual(conflicts[0]['type'], 'HOT_WORK_CONFINED_SPACE_CLASH')
+
+    def test_work_cannot_be_logged_against_non_active_permit(self):
+        """Rule: Work cannot be logged against a permit that isn't ACTIVE."""
+        permit = Permit.objects.create(
+            permit_number="PTW-TEST-WORK-01",
+            permit_type=Permit.PermitType.HOT_WORK,
+            title="Work Logging Invariant Test",
+            requester=self.requester,
+            contractor_name="Contractor A",
+            equipment=self.equipment_1,
+            planned_start=self.now,
+            planned_end=self.now + timedelta(hours=8),
+            status=Permit.Status.DRAFT,
+            type_data={"hot_work_type": "Welding", "fire_watch_assigned": "Watchman", "fire_extinguisher_type": "CO2 4.5kg", "combustibles_cleared_radius_m": 10, "gas_test_o2_pct": 20.9, "gas_test_lel_pct": 0.0, "gas_test_time": "2026-09-25T10:00"}
+        )
+
+        # 1. Attempt to log work on DRAFT permit -> Must fail
+        with self.assertRaises(ValidationError) as ctx:
+            PermitStateMachine.log_work(permit, self.requester, "Welding flange", hours_spent=2.0)
+        self.assertIn("Work cannot be logged against a permit that isn't ACTIVE", str(ctx.exception))
+
+        # 2. Submit permit -> PENDING_APPROVAL -> Must fail
+        PermitStateMachine.submit(permit, self.requester)
+        with self.assertRaises(ValidationError):
+            PermitStateMachine.log_work(permit, self.requester, "Welding flange", hours_spent=2.0)
+
+        # 3. Approve permit -> APPROVED -> Must fail
+        PermitStateMachine.approve(permit, self.area_owner_1)
+        PermitStateMachine.approve(permit, self.safety_officer)
+        with self.assertRaises(ValidationError):
+            PermitStateMachine.log_work(permit, self.requester, "Welding flange", hours_spent=2.0)
+
+        # 4. Activate permit -> ACTIVE -> Work log succeeds
+        PermitStateMachine.activate(permit, self.requester)
+        work_log = PermitStateMachine.log_work(
+            permit, self.requester, "Completed root pass on pipe rack weld", hours_spent=2.5, worker_name="Vikash Kumar"
+        )
+        self.assertIsNotNone(work_log.id)
+        self.assertEqual(work_log.hours_spent, 2.5)
+        self.assertEqual(permit.work_logs.count(), 1)
+
+        # 5. Close permit -> CLOSED -> Must fail
+        PermitStateMachine.close(permit, self.requester, "Work completed.")
+        with self.assertRaises(ValidationError):
+            PermitStateMachine.log_work(permit, self.requester, "Late weld touchup", hours_spent=1.0)
+

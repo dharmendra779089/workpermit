@@ -19,7 +19,9 @@ class AppController {
       area: '',
       search: '',
       expiring_soon: '',
-      my_approvals: ''
+      my_approvals: '',
+      start_date: '',
+      end_date: ''
     };
     this.wizardData = {
       step: 1,
@@ -210,6 +212,10 @@ class AppController {
       this.activeFilters.permit_type = document.getElementById('filter-type').value;
       this.activeFilters.plant = document.getElementById('filter-plant').value;
       this.activeFilters.area = document.getElementById('filter-area').value;
+      const startEl = document.getElementById('filter-start-date');
+      const endEl = document.getElementById('filter-end-date');
+      this.activeFilters.start_date = startEl ? startEl.value : '';
+      this.activeFilters.end_date = endEl ? endEl.value : '';
 
       const permits = await window.api.getPermits(this.activeFilters);
       this.renderPermitsTable(permits);
@@ -405,9 +411,13 @@ class AppController {
     document.getElementById('filter-type').value = '';
     document.getElementById('filter-plant').value = '';
     document.getElementById('filter-area').value = '';
+    const startEl = document.getElementById('filter-start-date');
+    const endEl = document.getElementById('filter-end-date');
+    if (startEl) startEl.value = '';
+    if (endEl) endEl.value = '';
     document.getElementById('btn-toggle-my-approvals').classList.remove('active');
     this.activeFilters = {
-      status: '', permit_type: '', plant: '', area: '', search: '', expiring_soon: '', my_approvals: ''
+      status: '', permit_type: '', plant: '', area: '', search: '', expiring_soon: '', my_approvals: '', start_date: '', end_date: ''
     };
     this.fetchPermits();
   }
@@ -954,6 +964,9 @@ class AppController {
       closureCard.style.display = 'none';
     }
 
+    // Render Work Logs
+    this.renderDetailWorkLogs(p);
+
     // Approvals Trail
     this.renderDetailApprovals(p);
 
@@ -962,6 +975,36 @@ class AppController {
 
     // Role-gated Dynamic Action Bar
     this.renderDetailActionBar(p);
+  }
+
+  renderDetailWorkLogs(p) {
+    const listEl = document.getElementById('detail-worklogs-list');
+    const quickBtn = document.getElementById('btn-quick-log-work');
+    if (!listEl) return;
+
+    if (quickBtn) {
+      quickBtn.style.display = p.status === 'ACTIVE' ? 'inline-flex' : 'none';
+    }
+
+    if (!p.work_logs || p.work_logs.length === 0) {
+      listEl.innerHTML = '<span style="color:var(--text-muted); font-size:0.85rem;">No maintenance tasks logged against this permit yet.</span>';
+      return;
+    }
+
+    listEl.innerHTML = '';
+    p.work_logs.forEach(w => {
+      const item = document.createElement('div');
+      item.className = 'worklog-item';
+      item.innerHTML = `
+        <div class="worklog-header">
+          <span class="worklog-worker">${w.worker_name} <span style="font-size:0.75rem; color:var(--text-muted);">(${w.worker_role || 'Technician'})</span></span>
+          <span class="worklog-hours">${w.hours_spent} Hours</span>
+        </div>
+        <div class="worklog-desc">${w.task_description}</div>
+        <div class="worklog-time">Logged: ${this.formatDateTime(w.logged_at)}</div>
+      `;
+      listEl.appendChild(item);
+    });
   }
 
   renderDetailTypeData(p) {
@@ -1122,6 +1165,16 @@ class AppController {
         <button class="btn-primary" onclick="app.openResumeModal(${p.id})">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
           Authorize Resumption
+        </button>
+      `;
+    }
+
+    // LOG WORK (Allowed when permit is ACTIVE)
+    if (actions.includes('LOG_WORK')) {
+      container.innerHTML += `
+        <button class="btn-primary" onclick="app.openLogWorkModal(${p.id})">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          Log Work Execution
         </button>
       `;
     }
@@ -1355,6 +1408,44 @@ class AppController {
       await this.loadPermitDetail(this.pendingActionPermitId);
     } catch (err) {
       this.showToast(`Verification failed: ${err.message}`, 'error');
+    }
+  }
+
+  openLogWorkModal(permitId) {
+    this.pendingActionPermitId = permitId || (this.currentPermit ? this.currentPermit.id : null);
+    const workerInput = document.getElementById('work-worker-name');
+    if (workerInput) {
+      workerInput.value = this.currentUser ? (this.currentUser.full_name || this.currentUser.username) : '';
+    }
+    const hoursInput = document.getElementById('work-hours-spent');
+    if (hoursInput) hoursInput.value = 1.0;
+    const descInput = document.getElementById('work-task-desc');
+    if (descInput) descInput.value = '';
+    this.openModal('modal-log-work');
+  }
+
+  async confirmLogWork() {
+    const workerName = document.getElementById('work-worker-name').value.trim();
+    const hours = parseFloat(document.getElementById('work-hours-spent').value);
+    const desc = document.getElementById('work-task-desc').value.trim();
+
+    if (!desc) {
+      this.showToast('Task execution notes are mandatory to log work.', 'warning');
+      return;
+    }
+
+    try {
+      this.showToast('Logging work execution...', 'info');
+      await window.api.logWork(this.pendingActionPermitId, {
+        worker_name: workerName,
+        hours_spent: hours,
+        task_description: desc
+      });
+      this.closeModal('modal-log-work');
+      this.showToast('Work successfully logged against active permit!', 'success');
+      await this.loadPermitDetail(this.pendingActionPermitId);
+    } catch (err) {
+      this.showToast(`Failed to log work: ${err.message}`, 'error');
     }
   }
 

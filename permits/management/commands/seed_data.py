@@ -115,8 +115,6 @@ class Command(BaseCommand):
                 "description": "Atmospheric and vacuum distillation columns, heat exchanger trains, and crude furnace."
             }
         )
-        area_owner.assigned_area = area1
-        area_owner.save()
 
         area2, _ = Area.objects.get_or_create(
             plant=plant1,
@@ -289,7 +287,8 @@ class Command(BaseCommand):
                 "gas_test_lel_pct": 0.0,
                 "gas_test_h2s_ppm": 0.0,
                 "gas_test_co_ppm": 2,
-                "gas_test_time": now.strftime("%Y-%m-%dT%H:%M")
+                "gas_test_time": now.strftime("%Y-%m-%dT%H:%M"),
+                "entry_exit_log": "Entrant 1: Amit Verma (In: 10:05, Out: 11:30) | Entrant 2: Suresh Pillai (In: 10:05, Out: 11:25) | Standby Attendant: M. Selvam verified all out."
             }
         )
         PermitAuditLog.objects.create(
@@ -513,7 +512,8 @@ class Command(BaseCommand):
                 "gas_test_lel_pct": 2.0,
                 "gas_test_h2s_ppm": 1.0,
                 "gas_test_co_ppm": 4,
-                "gas_test_time": (now - timedelta(hours=4)).strftime("%Y-%m-%dT%H:%M")
+                "gas_test_time": (now - timedelta(hours=4)).strftime("%Y-%m-%dT%H:%M"),
+                "entry_exit_log": "Entrant 1: K. Mani (In: 08:30, Out: 09:15 - Evacuated on H2S gas alarm) | Entrant 2: S. Das (In: 08:30, Out: 09:14 - Evacuated on H2S gas alarm) | Attendant R. Vignesh sounded klaxon."
             }
         )
         PermitAuditLog.objects.create(

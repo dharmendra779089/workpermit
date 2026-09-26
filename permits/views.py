@@ -218,7 +218,7 @@ class PermitViewSet(viewsets.ModelViewSet):
                 )
             elif user.is_area_owner():
                 # Owned area permits where area approval not yet given and not requested by user
-                owned_areas = Area.objects.filter(Q(owner=user) | Q(id=user.assigned_area_id if hasattr(user, 'assigned_area_id') else None))
+                owned_areas = Area.objects.filter(owner=user)
                 qs = qs.filter(
                     status=Permit.Status.PENDING_APPROVAL,
                     equipment__area__in=owned_areas
@@ -328,6 +328,21 @@ class PermitViewSet(viewsets.ModelViewSet):
         comment = request.data.get('comment', '')
         updated_permit = PermitStateMachine.approve_extension(permit, request.user, approved=approved, comment=comment)
         return Response(PermitDetailSerializer(updated_permit, context={'request': request}).data)
+
+    @action(detail=True, methods=['post'])
+    def log_work(self, request, pk=None):
+        """
+        Logs technician work execution against an active permit.
+        Enforces: Work cannot be logged against a permit that isn't ACTIVE.
+        """
+        permit = self.get_object()
+        task_desc = request.data.get('task_description', '')
+        hours = request.data.get('hours_spent', 1.0)
+        worker_name = request.data.get('worker_name', '')
+        PermitStateMachine.log_work(
+            permit, request.user, task_description=task_desc, hours_spent=hours, worker_name=worker_name
+        )
+        return Response(PermitDetailSerializer(permit, context={'request': request}).data)
 
     @action(detail=True, methods=['get'])
     def conflicts(self, request, pk=None):
